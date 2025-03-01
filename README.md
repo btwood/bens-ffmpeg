@@ -5,13 +5,12 @@ I wanted something that I could just point at a MakeMKV output folder and let it
 
 ## Prerequisites
 - Bash
-- GPU Drivers
+- nVidia GPU Drivers (can modify ffmpeg line for anything though)
 - ffmpeg and ffprobe
 
 ## Usage
 TODO: 
-Verify encoder is available
-Some bash one liners that illustrate usage
+Verify encoder is available, Some bash one liners that illustrate usage
 
 ## Features
 - Crop using several video samples throughout the source
