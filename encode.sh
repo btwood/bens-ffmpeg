@@ -75,5 +75,5 @@ out_file="$target_dir/${bname}_$(date +%s).mkv"
 qp=18
 vcodec="h264_nvenc" # h264_nvenc hevc_nvenc av1_nvenc
 set -x
-ffmpeg -hwaccel cuda -hwaccel_output_format cuda -canvas_size $canvas -i "$source_file" -map 0:v:0  -vf "$filters" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
+ffmpeg -hwaccel cuda -hwaccel_output_format cuda -canvas_size "$canvas" -i "$source_file" -map 0:v:0  -vf "$filters" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
 
