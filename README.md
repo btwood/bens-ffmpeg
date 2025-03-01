@@ -45,7 +45,7 @@ I had issues with cropping on films like Tron, because the aspect ratio changes 
 I have plenty of older DVD soruces that are interlaced. By parsing the metadata, yadif can be applied dynamically, and only when neccessary.
 
 I discovered issues with plex playback on web clients that didn't support AC3 (Chrome Browswers)\
-https://cconcolato.github.io/media-mime-support/#video/mp4;%20codecs=%22ac-3%22\
+https://cconcolato.github.io/media-mime-support/#video/mp4;%20codecs=%22ac-3%22 \
 Plex seems capable of downmixing the audio properly, but having the 2.1 track avoids audio transcode.
 
 Having subtitles is nice. I wanted to copy the PGS subs but noticed the placement could get wonky. The `canvas_size` parameter is an attempt to fix this. A good test case is Black Panther, because there are forced subs within the first 5 minutes where they speak Wakandan.
