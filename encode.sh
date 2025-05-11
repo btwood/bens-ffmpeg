@@ -68,10 +68,14 @@ echo "--- Performing Encode ---"
 bname=$(basename "$source_file")
 out_file="$target_dir/${bname}_$(date +%s).mkv"
 # 1080p h264 qp 20 ~ 14Mbps
-# 1080p h264 qp 18 ~ 17Mbps
+# 1080p h264 qp 18 ~ 17Mbps *
 # 1080p hevc qp 24 ~ 12Mbps
-# 1080p hevc qp 20 ~ 17Mbps
+# 1080p hevc qp 20 ~ 17Mbps *
 # 1080p hevc qp 18 ~ 23.5Mbps (visually "lossless")
+# 1080p av1  qp 32 ~ 12.1Mbps
+# 1080p av1  qp 24 ~ 19.7Mbps *
+# 1080p av1  qp 22 ~ 24.9Mbps (visually "lossless")
+# 1080p av1  qp 18 ~ 28.6Mbps
 qp=18
 vcodec="h264_nvenc" # h264_nvenc hevc_nvenc av1_nvenc
 set -x
