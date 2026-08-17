@@ -38,6 +38,7 @@ i=0
 while [ $i -lt $maxtime ]; do
 	printf '%d ' $i
 	crops[$i]=$(ffmpeg -ss $i -t 1 -i "$source_file" -vf cropdetect -f null - 2>&1 | grep -o "crop=.*" | tail -1)
+	printf '%s\n' ${crops[$i]}
 	i=$((i+step))
 done
 echo
@@ -45,7 +46,7 @@ printf '%s\n' ${crops[*]} | sort | uniq -c | sort -n
 crop=$(printf '%s\n' ${crops[*]} | sort | uniq -c | sort -n | tail -1)
 crop=`expr match "$crop" '.*\(crop.*\)'`
 echo "Using $crop"
-canvas=`expr match "crop=1920:800:0:140" 'crop=\(.*\):.*:'`
+canvas=`expr match "$crop" 'crop=\(.*\):.*:'`
 echo "Canvas $canvas"
 filters=$crop
 
