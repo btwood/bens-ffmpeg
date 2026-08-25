@@ -53,14 +53,15 @@ filters=$crop
 # 2 -- Interlace Detection
 echo "--- Checking Interlaced ---"
 #ffprobe "$source_file" 2>&1 | grep -q progressive
-(
-source <(ffprobe -v quiet -select_streams v -show_entries stream=field_order -of flat=s=_ "$source_file")
+source <(ffprobe -v quiet -select_streams v -show_entries stream=field_order,pix_fmt -of flat=s=_ "$source_file")
 if [ ${#streams_stream_0_field_order} -eq 2 ]; then
 	echo "Found Interlaced: $streams_stream_0_field_order"
 	filters="yadif=1:-1:0,$crop"
 fi
-)
-
+if [ ${#streams_stream_0_pix_fmt} ]; then
+	echo "Found Pixel Format: $streams_stream_0_pix_fmt"
+	pixel_format=$(echo $streams_stream_0_pix_fmt)
+fi
 # 3 -- Audio stream count to add AAC Track
 astreams=$(ffprobe -v quiet -show_entries stream=index -select_streams a -of flat "$source_file" | wc -l )
 
@@ -80,5 +81,5 @@ out_file="$target_dir/${bname}_$(date +%s).mkv"
 qp=18
 vcodec="h264_nvenc" # h264_nvenc hevc_nvenc av1_nvenc
 set -x
-ffmpeg -hwaccel cuda -hwaccel_output_format cuda -canvas_size "$canvas" -i "$source_file" -map 0:v:0  -vf "$filters" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
+ffmpeg -init_hw_device cuda=gpu -filter_hw_device gpu -canvas_size $canvas -i "$source_file" -map 0:v:0  -vf "$filters,hwupload" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
 
