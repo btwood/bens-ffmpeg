@@ -9,17 +9,24 @@ if [ $# -ne 2 ]; then
 fi
 
 ### Codec | Quality Settings ###
-# 1080p h264 qp 20 ~ 14Mbps 
-# 1080p h264 qp 18 ~ 17Mbps *
-# 1080p hevc qp 24 ~ 12Mbps 
-# 1080p hevc qp 20 ~ 17Mbps *
-# 1080p hevc qp 18 ~ 23.5Mbps (visually "lossless")
-# 1080p av1  qp 32 ~ 12.1Mbps
-# 1080p av1  qp 24 ~ 19.7Mbps *
-# 1080p av1  qp 22 ~ 24.9Mbps (visually "lossless")
-# 1080p av1  qp 18 ~ 28.6Mbps
-qp=18
-vcodec="h264_nvenc" # h264_nvenc hevc_nvenc av1_nvenc
+# 1080p h264 cq 20 ~ 14Mbps 
+# 1080p h264 cq 18 ~ 17Mbps *
+# 1080p hevc cq 24 ~ 12Mbps 
+# 1080p hevc cq 20 ~ 17Mbps *
+# 1080p hevc cq 18 ~ 23.5Mbps (visually "lossless")
+# 1080p av1  cq 32 ~ 12.1Mbps
+# 1080p av1  cq 24 ~ 19.7Mbps *
+# 1080p av1  cq 22 ~ 24.9Mbps (visually "lossless")
+# 1080p av1  cq 18 ~ 28.6Mbps
+#ffmpeg -init_hw_device cuda=gpu -filter_hw_device gpu -canvas_size $canvas -i "$source_file" -map 0:v:0 -vf "$filters,hwupload" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? $profile -c:v:0 $vcodec -rc vbr -cq $qp -b:v 0 -maxrate 80M -bufsize 120M -c:s copy -cues_to_front true "$out_file"
+#hwaccel='-init_hw_device cuda=gpu -filter_hw_device gpu'
+#quality='-rc vbr -b:v 0 -maxrate 80M -bufsize 120M -preset p7 -cq 24'
+#vcodec="h264_nvenc" # h264_nvenc hevc_nvenc av1_nvenc
+hwaccel=''
+profile='-profile:v high'
+quality='-level:v 4.1 -preset slow -crf 18'
+vcodec="libx264" # h264_nvenc hevc_nvenc av1_nvenc
+
 
 source_file=$1
 target_dir=$2
@@ -64,26 +71,29 @@ crop=`expr match "$crop" '.*\(crop.*\)'`
 echo "Using $crop"
 canvas=`expr match "$crop" 'crop=\(.*\):.*:'`
 echo "Canvas $canvas"
-filters=$crop
-profile=''
+filters="$crop"
 
 # 2 -- Video Format Detection
 echo "--- Checking Video Format ---"
-#ffprobe "$source_file" 2>&1 | grep -q progressive
+# Send ffprobe stream output to variables
 source <(ffprobe -v quiet -select_streams v -show_entries stream -of flat=s=_ "$source_file")
+# Detect interlaced video
 if [ ${#streams_stream_0_field_order} -eq 2 ]; then
 	echo "Found Interlaced: $streams_stream_0_field_order"
 	filters="yadif=1:-1:0,$crop"
 fi
+# Detect HDR10 content
 if [ "$streams_stream_0_profile" == 'Main 10' ]; then
 	echo "Found 10-bit"
 	# check for compatible features
 	# ffmpeg -h encoder=hevc_nvenc
-	filters="$crop,format=p010le"
-	profile='-profile:v main10'
-	vcodec='hevc_nvenc'
-	qp=20
-
+	#filters="$crop,format=p010le"
+	filters="$crop,format=yuv420p10le"
+	profile='-profile:v main10 -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc'
+	#vcodec='hevc_nvenc' #Disabled due to HW lacking b-frame support
+	hwaccel=''
+	vcodec='libx265'
+	quality='-rc vbr -b:v 0 -maxrate 80M -bufsize 120M -cq 20'
 fi
 
 # 3 -- Audio stream count to add AAC Track
@@ -95,4 +105,9 @@ bname=$(basename "$source_file")
 out_file="$target_dir/${bname}_$(date +%s).mkv"
 set -x
 #ffmpeg -hwaccel cuda -hwaccel_output_format cuda -canvas_size $canvas -i "$source_file" -map 0:v:0  -vf "$filters" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
-ffmpeg -init_hw_device cuda=gpu -filter_hw_device gpu -canvas_size $canvas -i "$source_file" -map 0:v:0  -vf "$filters,hwupload" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? $profile -c:v:0 $vcodec -qp $qp -c:s copy "$out_file"
+#ffmpeg -init_hw_device cuda=gpu -filter_hw_device gpu -canvas_size $canvas -i "$source_file" -map 0:v:0 -vf "$filters,hwupload" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 3 -metadata:s:a:$((astreams)) title="Surround 2.1" -map 0:s? $profile -c:v:0 $vcodec -rc vbr -cq $qp -b:v 0 -maxrate 80M -bufsize 120M -c:s copy -cues_to_front true "$out_file"
+
+ffmpeg $hwaccel -canvas_size $canvas -i "$source_file" -map 0:v:0 -vf "$filters" -map 0:a -c:a copy -map 0:a:0 -c:a:$((astreams)) aac -ac 2 -b:a:$((astreams)) 192k -metadata:s:a:$((astreams)) title="Stereo Fallback" $profile -c:v:0 $vcodec $quality -fps_mode cfr -force_key_frames 'expr:gte(t,n_forced*2)' "$out_file"
+mkvmerge -o "${out_file}_subs" "$out_file" --no-video --no-audio "$source_file"
+rm "$out_file"
+mv "${out_file}_subs" "$out_file"
