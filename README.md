@@ -5,7 +5,7 @@ I wanted something that I could just point at a MakeMKV output folder and let it
 
 ## Prerequisites
 - Bash
-- nVidia GPU Drivers (can modify ffmpeg line for anything though)
+- ~~nVidia GPU Drivers~~ (can modify ffmpeg line for anything though)
 - ffmpeg and ffprobe
 - mkvtoolnix (for mkvmerge)
 
