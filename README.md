@@ -7,6 +7,7 @@ I wanted something that I could just point at a MakeMKV output folder and let it
 - Bash
 - nVidia GPU Drivers (can modify ffmpeg line for anything though)
 - ffmpeg and ffprobe
+- mkvtoolnix (for mkvmerge)
 
 ## Usage
 ```bash
@@ -34,9 +35,9 @@ ffmpeg -encoders | grep h264
 ## Features
 - Crop using several video samples throughout the source
 - Apply yadif ONLY if the source is interlaced
-- Copy all subtitle tracks
-- Dynamically add a 2.1 AAC audio track for Plex Web (newer plex web seems to hava a way to handle AC3 now)
-- Leverage hardware acceleration
+- Copy all subtitle tracks (using mkvmerge, ffmpeg has issues with sparse tracks, direct copy using mkvmerge works around the issue) 
+- Dynamically add a Stereo AAC audio track for TVs without audio systems and Plex Web (newer plex web seems to have a a way to handle AC3 now)
+- ~~Leverage hardware acceleration~~ Removed HW accels due to issues with HDR content on older nvidia card, fastflix is likely the tool to use in the future, x265 in use for widest feature compatability
 - Allow full tuning of the quality and codecs
 
 ## Motivations
@@ -50,7 +51,11 @@ Plex seems capable of downmixing the audio properly, but having the 2.1 track av
 
 Having subtitles is nice. I wanted to copy the PGS subs but noticed the placement could get wonky. The `canvas_size` parameter is an attempt to fix this. A good test case is Black Panther, because there are forced subs within the first 5 minutes where they speak Wakandan.
 
-I really wanted to speed up encoding with an nVidia GPU.
+~~I really wanted to speed up encoding with an nVidia GPU.~~ My older GPU doesn't handle HDR well at all. Using x265 on a powerful CPU seems to operate fast enough.
+
+I want to maintain quality of 4K HDR content.
+
+I want output to be playable on my Roku devices.
 
 ## Useful Resources
 Check Browser for supported codecs:\
@@ -58,3 +63,6 @@ https://cconcolato.github.io/media-mime-support/
 
 Thorough Codec Comparison using VMAF and other evaluations:\
 https://goughlui.com/2023/12/24/video-codec-round-up-2023-part-0-motivation-methodology-limitations/
+
+Info on encoding HDR10 videos, and fastflix:
+https://codecalamity.com/encoding-uhd-4k-hdr10-videos-with-ffmpeg/
